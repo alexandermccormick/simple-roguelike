@@ -42,22 +42,17 @@
     </div>
     <script src="./simple-roguelike.js"></script>
     <script>
-
-      window.addEventListener("keydown", ev => {
-              console.log(ev)
-            })
-      const canvas = document.getElementById("canvas");
       function up() {
-        canvas.dispatchEvent(new KeyboardEvent("keydown", { keyCode: 38 }))
+        window.dispatchEvent(new KeyboardEvent("keydown", { code: "ArrowUp" }))
       }
       function right() {
-        canvas.dispatchEvent(new KeyboardEvent("keydown", { keyCode: 39 }))
+        window.dispatchEvent(new KeyboardEvent("keydown", { code: "ArrowRight" }))
       }
       function left() {
-        canvas.dispatchEvent(new KeyboardEvent("keydown", { keyCode: 37 }))
+        window.dispatchEvent(new KeyboardEvent("keydown", { code: "ArrowLeft" }))
       }
       function down() {
-        canvas.dispatchEvent(new KeyboardEvent("keydown", { keyCode: 40 }))
+        window.dispatchEvent(new KeyboardEvent("keydown", { code: "ArrowDown" }))
       }
       window.addEventListener("load", async () => {
         await wasm_bindgen("./simple-roguelike_bg.wasm");
