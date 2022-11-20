@@ -1,11 +1,64 @@
 <html>
   <head>
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
+    <style>
+      .flex-column-center {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .touch-controls {
+        margin-top: 50px;
+      }
+
+      .left-right button:nth-child(odd) {
+        margin-right: 50px;
+      }
+
+      html {
+        background-color: black;
+      }
+      
+      button {
+        font-size: 2em;
+        width: 50px;
+        height: 50px;
+        border-radius: 5px;
+        text-align:center;
+      }
+    </style>
   </head>
-  <body>
+  <body class="flex-column-center">
     <canvas id="canvas" width="1280" height="960"></canvas>
+    <div class="touch-controls flex-column-center">
+      <button onclick="up()">&uarr;</button>
+      <div class="left-right">
+        <button onclick="left()">&larr;</button>
+        <button onclick="right()">&rarr;</button>
+      </div>
+        <button onclick="down()">&darr;</button>
+    </div>
     <script src="./simple-roguelike.js"></script>
     <script>
+
+      window.addEventListener("keydown", ev => {
+              console.log(ev)
+            })
+      const canvas = document.getElementById("canvas");
+      function up() {
+        canvas.dispatchEvent(new KeyboardEvent("keydown", { keyCode: 38 }))
+      }
+      function right() {
+        canvas.dispatchEvent(new KeyboardEvent("keydown", { keyCode: 39 }))
+      }
+      function left() {
+        canvas.dispatchEvent(new KeyboardEvent("keydown", { keyCode: 37 }))
+      }
+      function down() {
+        canvas.dispatchEvent(new KeyboardEvent("keydown", { keyCode: 40 }))
+      }
       window.addEventListener("load", async () => {
         await wasm_bindgen("./simple-roguelike_bg.wasm");
       });
