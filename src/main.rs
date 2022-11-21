@@ -7,6 +7,9 @@ mod map;
 mod rect;
 mod visibility_system;
 mod monster_ai_system;
+mod map_indexing_system;
+mod melee_combat_system;
+mod damage_system;
 
 pub use components::*;
 pub use player::*;
@@ -14,28 +17,55 @@ pub use map::*;
 pub use rect::*;
 use visibility_system::VisibilitySystem;
 use monster_ai_system::MonsterAI;
+use map_indexing_system::MapIndexingSystem;
+use melee_combat_system::MeleeCombatSystem;
+use damage_system::{DamageSystem, delete_the_dead};
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum RunState {
-    Paused,
-    Running
+    AwaitingInput,
+    PreRun,
+    PlayerTurn,
+    MonsterTurn
 }
 
 pub struct State {
     pub ecs: World,
-    pub runstate: RunState
 }
 
 impl GameState for State {
     fn tick(&mut self, ctx: &mut Rltk) {
         ctx.cls();
+        let mut newrunstate =
+        {
+            let runstate = self.ecs.fetch::<RunState>();
+            *runstate
+        };
 
-        if self.runstate == RunState::Running {
-            self.run_systems();
-            self.runstate = RunState::Paused;
-        } else {
-            self.runstate = player_input(self, ctx)
+        match newrunstate {
+            RunState::PreRun => {
+                self.run_systems();
+                newrunstate = RunState::AwaitingInput;
+            }
+            RunState::AwaitingInput => {
+                newrunstate = player_input(self, ctx);
+            }
+            RunState::PlayerTurn => {
+                self.run_systems();
+                newrunstate = RunState::MonsterTurn;
+            }
+            RunState::MonsterTurn => {
+                self.run_systems();
+                newrunstate = RunState::AwaitingInput;
+            }
         }
+
+        {
+            let mut runwriter = self.ecs.write_resource::<RunState>();
+            *runwriter = newrunstate;
+        }
+
+        delete_the_dead(&mut self.ecs);
 
         draw_map(&self.ecs, ctx);
 
@@ -58,6 +88,15 @@ impl State {
         let mut mob = MonsterAI{};
         mob.run_now(&self.ecs);
 
+        let mut mapindex = MapIndexingSystem{};
+        mapindex.run_now(&self.ecs);
+
+        let mut melee = MeleeCombatSystem{};
+        melee.run_now(&self.ecs);
+
+        let mut damage = DamageSystem{};
+        damage.run_now(&self.ecs);
+
         self.ecs.maintain();
     }
 }
@@ -74,7 +113,6 @@ fn main() -> rltk::BError {
 
     let mut gs = State {
         ecs: World::new(),
-        runstate: RunState::Running
     };
 
     gs.ecs.register::<Player>();
@@ -83,6 +121,10 @@ fn main() -> rltk::BError {
     gs.ecs.register::<Viewshed>();
     gs.ecs.register::<Monster>();
     gs.ecs.register::<Name>();
+    gs.ecs.register::<BlocksTile>();
+    gs.ecs.register::<CombatStats>();
+    gs.ecs.register::<WantsToMelee>();
+    gs.ecs.register::<SufferDamage>();
 
     let mut rng = rltk::RandomNumberGenerator::new();
     for (i, room) in map.rooms.iter().skip(1).enumerate() {
@@ -106,13 +148,16 @@ fn main() -> rltk::BError {
             .with(Viewshed{ visible_tiles: Vec::new(), range: 8, dirty: true})
             .with(Monster{})
             .with(Name{ name: format!("{} #{}", &name, i) })
+            .with(BlocksTile{})
+            .with(CombatStats{ max_hp: 16, hp: 16, defense: 1, power: 4 })
             .build();
     }
 
     gs.ecs.insert(map);
     gs.ecs.insert(Point::new(player_x, player_y));
+    gs.ecs.insert(RunState::PreRun);
 
-    gs.ecs
+    let player_entity = gs.ecs
         .create_entity()
         .with(Position { x: player_x, y: player_y })
         .with(Renderable {
@@ -123,7 +168,10 @@ fn main() -> rltk::BError {
         .with(Player{})
         .with(Viewshed{ visible_tiles: Vec::new(), range: 8, dirty: true})
         .with(Name{ name: "Player".to_string() })
+        .with(CombatStats{ max_hp: 30, hp: 30, defense: 2, power: 5 })
         .build();
+
+    gs.ecs.insert(player_entity);
 
     rltk::main_loop(context, gs)
 }
