@@ -24,7 +24,7 @@ use monster_ai_system::MonsterAI;
 use map_indexing_system::MapIndexingSystem;
 use melee_combat_system::MeleeCombatSystem;
 use damage_system::{DamageSystem, delete_the_dead};
-use inventory_system::{ItemCollectionSystem, PotionUseSystem, ItemDropSystem};
+use inventory_system::{ItemCollectionSystem, UseItemSystem, ItemDropSystem};
 
 #[derive(PartialEq, Copy, Clone)]
 pub enum RunState {
@@ -33,7 +33,8 @@ pub enum RunState {
     PlayerTurn,
     MonsterTurn,
     ShowInventory,
-    ShowDropItem
+    ShowDropItem,
+    ShowTargeting { range: i32, item: Entity}
 }
 
 pub struct State {
@@ -78,10 +79,16 @@ impl GameState for State {
                     gui::ItemMenuResult::NoResponse => {}
                     gui::ItemMenuResult::Selected => {
                         let item_entity = result.1.unwrap();
-                        let mut intent = self.ecs.write_storage::<WantsToDrinkPotion>();
-                        intent.insert(*self.ecs.fetch::<Entity>(), WantsToDrinkPotion { potion: item_entity })
-                            .expect("Unable to insert intent");
-                        newrunstate = RunState::PlayerTurn;
+                        let is_ranged = self.ecs.read_storage::<Ranged>();
+                        let is_item_ranged = is_ranged.get(item_entity);
+                        if let Some(is_item_ranged) = is_item_ranged {
+                            newrunstate = RunState::ShowTargeting { range: is_item_ranged.range, item: item_entity };
+                        } else {
+                            let mut intent = self.ecs.write_storage::<WantsToUseItem>();
+                            intent.insert(*self.ecs.fetch::<Entity>(), WantsToUseItem { item: item_entity, target: None })
+                                .expect("Unable to insert intent");
+                            newrunstate = RunState::PlayerTurn;
+                        }
                     }
                 }
             }
@@ -94,6 +101,19 @@ impl GameState for State {
                         let item_entity = result.1.unwrap();
                         let mut intent = self.ecs.write_storage::<WantsToDropItem>();
                         intent.insert(*self.ecs.fetch::<Entity>(), WantsToDropItem{ item: item_entity }).expect("Unable to insert intent");
+                        newrunstate = RunState::PlayerTurn;
+                    }
+                }
+            }
+            RunState::ShowTargeting { range, item } => {
+                let result = gui::ranged_target(self, ctx, range);
+                match result.0 {
+                    gui::ItemMenuResult::Cancel => newrunstate = RunState::AwaitingInput,
+                    gui::ItemMenuResult::NoResponse => {}
+                    gui::ItemMenuResult::Selected => {
+                        let mut intent = self.ecs.write_storage::<WantsToUseItem>();
+                        intent.insert(*self.ecs.fetch::<Entity>(), WantsToUseItem { item, target: result.1 })
+                            .expect("Unable to insert intent");
                         newrunstate = RunState::PlayerTurn;
                     }
                 }
@@ -142,7 +162,7 @@ impl State {
         let mut pickup = ItemCollectionSystem{};
         pickup.run_now(&self.ecs);
 
-        let mut potions = PotionUseSystem{};
+        let mut potions = UseItemSystem{};
         potions.run_now(&self.ecs);
 
         let mut drop_items = ItemDropSystem{};
@@ -168,22 +188,27 @@ fn main() -> rltk::BError {
     };
 
 
-    gs.ecs.register::<Player>();
-    gs.ecs.register::<Position>();
-    gs.ecs.register::<Renderable>();
-    gs.ecs.register::<Viewshed>();
-    gs.ecs.register::<Monster>();
-    gs.ecs.register::<Name>();
+    gs.ecs.register::<AreaOfEffect>();
     gs.ecs.register::<BlocksTile>();
     gs.ecs.register::<CombatStats>();
-    gs.ecs.register::<WantsToMelee>();
-    gs.ecs.register::<SufferDamage>();
-    gs.ecs.register::<Item>();
-    gs.ecs.register::<Potion>();
+    gs.ecs.register::<Confusion>();
+    gs.ecs.register::<Consumable>();
     gs.ecs.register::<InBackpack>();
-    gs.ecs.register::<WantsToPickupItem>();
-    gs.ecs.register::<WantsToDrinkPotion>();
+    gs.ecs.register::<InflictsDamage>();
+    gs.ecs.register::<Item>();
+    gs.ecs.register::<Monster>();
+    gs.ecs.register::<Name>();
+    gs.ecs.register::<Player>();
+    gs.ecs.register::<Position>();
+    gs.ecs.register::<ProvidesHealing>();
+    gs.ecs.register::<Ranged>();
+    gs.ecs.register::<Renderable>();
+    gs.ecs.register::<SufferDamage>();
+    gs.ecs.register::<Viewshed>();
     gs.ecs.register::<WantsToDropItem>();
+    gs.ecs.register::<WantsToMelee>();
+    gs.ecs.register::<WantsToPickupItem>();
+    gs.ecs.register::<WantsToUseItem>();
     gs.ecs.insert(Point::new(player_x, player_y));
     gs.ecs.insert(RunState::PreRun);
     gs.ecs.insert(gamelog::GameLog{ entries: vec!["Welcome to Rusty Roguelike".to_string()] });

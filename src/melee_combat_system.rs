@@ -1,6 +1,5 @@
 use specs::prelude::*;
 use super::{CombatStats, gamelog::GameLog, WantsToMelee, Name, SufferDamage};
-use rltk::console;
 
 pub struct MeleeCombatSystem {}
 

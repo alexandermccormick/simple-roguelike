@@ -3,6 +3,11 @@ use specs_derive::*;
 use rltk::RGB;
 
 #[derive(Component, Debug)]
+pub struct AreaOfEffect {
+    pub radius: i32
+}
+
+#[derive(Component, Debug)]
 pub struct BlocksTile;
 
 #[derive(Component, Debug)]
@@ -26,8 +31,18 @@ pub struct CombatStats {
 }
 
 #[derive(Component, Debug)]
+pub struct Confusion {
+    pub turns: i32
+}
+
+#[derive(Component, Debug)]
 pub struct InBackpack {
     pub owner: Entity
+}
+
+#[derive(Component, Debug)]
+pub struct InflictsDamage {
+    pub damage: i32
 }
 
 #[derive(Component, Debug)]
@@ -42,8 +57,13 @@ pub struct Position {
 }
 
 #[derive(Component, Debug)]
-pub struct Potion {
+pub struct ProvidesHealing {
     pub heal_amount: i32
+}
+
+#[derive(Component, Debug)]
+pub struct Ranged {
+    pub range: i32
 }
 
 #[derive(Component)]
@@ -78,13 +98,14 @@ pub struct Viewshed {
 }
 
 #[derive(Component, Debug)]
-pub struct WantsToDrinkPotion {
-    pub potion: Entity
+pub struct WantsToUseItem {
+    pub item: Entity,
+    pub target: Option<rltk::Point>
 }
 
 #[derive(Component, Debug)]
 pub struct WantsToDropItem {
-    pub item: Entity
+    pub item: Entity,
 }
 
 #[derive(Component, Debug, Clone)]
