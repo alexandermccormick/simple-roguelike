@@ -1,7 +1,6 @@
 <html>
   <head>
     <meta content="text/html;charset=utf-8" http-equiv="Content-Type" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
     <style>
       .flex-column-center {
         display: flex;
@@ -9,52 +8,64 @@
         justify-content: center;
         align-items: center;
       }
-
-      .touch-controls {
-        margin-top: 50px;
-      }
-
-      .left-right button:nth-child(odd) {
-        margin-right: 50px;
-      }
-
-      html {
-        background-color: black;
-      }
-      
-      button {
-        font-size: 2em;
-        width: 50px;
-        height: 50px;
-        border-radius: 5px;
-        text-align:center;
-      }
     </style>
   </head>
   <body class="flex-column-center">
     <canvas id="canvas" width="1280" height="960"></canvas>
-    <div class="touch-controls flex-column-center">
-      <button onclick="up()">&uarr;</button>
-      <div class="left-right">
-        <button onclick="left()">&larr;</button>
-        <button onclick="right()">&rarr;</button>
-      </div>
-        <button onclick="down()">&darr;</button>
-    </div>
+    <p>This game requires a keyboard</p>
+    <table>
+      <tr>
+        <th>Key</th>
+        <th>Action</th>
+      </tr>
+      <tr>
+        <td>j (&darr;)</td>
+        <td>Move South</td>
+      </tr>
+      <tr>
+        <td>k (&uarr;)</td>
+        <td>Move North</td>
+      </tr>
+      <tr>
+        <td>h (&larr;)</td>
+        <td>Move West</td>
+      </tr>
+      <tr>
+        <td>l (&rarr;)</td>
+        <td>Move East</td>
+      </tr>
+      <tr>
+        <td>y</td>
+        <td>Move NW</td>
+      </tr>
+      <tr>
+        <td>u</td>
+        <td>Move NE</td>
+      </tr>
+      <tr>
+        <td>b</td>
+        <td>Move SW</td>
+      </tr>
+      <tr>
+        <td>n</td>
+        <td>Move SE</td>
+      </tr>
+      <tr>
+        <td>g</td>
+        <td>Pickup item</td>
+      </tr>
+      <tr>
+        <td>i</td>
+        <td>Open inventory</td>
+      </tr>
+      <tr>
+        <td>d</td>
+        <td>Drop menu</td>
+      </tr>
+    </table>
+
     <script src="./simple-roguelike.js"></script>
     <script>
-      function up() {
-        window.dispatchEvent(new KeyboardEvent("keydown", { code: "ArrowUp" }))
-      }
-      function right() {
-        window.dispatchEvent(new KeyboardEvent("keydown", { code: "ArrowRight" }))
-      }
-      function left() {
-        window.dispatchEvent(new KeyboardEvent("keydown", { code: "ArrowLeft" }))
-      }
-      function down() {
-        window.dispatchEvent(new KeyboardEvent("keydown", { code: "ArrowDown" }))
-      }
       window.addEventListener("load", async () => {
         await wasm_bindgen("./simple-roguelike_bg.wasm");
       });
