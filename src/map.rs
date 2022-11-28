@@ -1,5 +1,5 @@
 use rltk::{ RGB, Rltk, RandomNumberGenerator, BaseMap, Algorithm2D, Point };
-use super::{Rect};
+use super::Rect;
 use std::cmp::{max, min};
 use specs::prelude::*;
 use serde::{Serialize, Deserialize};
@@ -10,7 +10,9 @@ pub const MAPCOUNT : usize = MAPHEIGHT * MAPWIDTH;
 
 #[derive(PartialEq, Copy, Clone, Serialize, Deserialize)]
 pub enum TileType {
-    Wall, Floor
+    DownStairs,
+    Floor,
+    Wall
 }
 
 #[derive(Default, Serialize, Deserialize, Clone)]
@@ -22,6 +24,7 @@ pub struct Map {
     pub revealed_tiles : Vec<bool>,
     pub visible_tiles : Vec<bool>,
     pub blocked : Vec<bool>,
+    pub depth: i32,
 
     #[serde(skip_serializing)]
     #[serde(skip_deserializing)]
@@ -29,6 +32,63 @@ pub struct Map {
 }
 
 impl Map {
+    /// Makes a new map using the algorithm from http://rogueliketutorials.com/tutorials/tcod/part-3/
+    /// This gives a handful of random rooms and corridors joining them together.
+    pub fn new_map_rooms_and_corridors(new_depth: i32) -> Map {
+        let mut map = Map{
+            tiles : vec![TileType::Wall; MAPCOUNT],
+            rooms : Vec::new(),
+            width : MAPWIDTH as i32,
+            height: MAPHEIGHT as i32,
+            revealed_tiles : vec![false; MAPCOUNT],
+            visible_tiles : vec![false; MAPCOUNT],
+            blocked : vec![false; MAPCOUNT],
+            tile_content : vec![Vec::new(); MAPCOUNT],
+            depth: new_depth
+        };
+
+        const MAX_ROOMS : i32 = 30;
+        const MIN_SIZE : i32 = 6;
+        const MAX_SIZE : i32 = 10;
+
+        let mut rng = RandomNumberGenerator::new();
+
+        for _i in 0..MAX_ROOMS {
+            let w = rng.range(MIN_SIZE, MAX_SIZE);
+            let h = rng.range(MIN_SIZE, MAX_SIZE);
+            let x = rng.roll_dice(1, map.width - w - 1) - 1;
+            let y = rng.roll_dice(1, map.height - h - 1) - 1;
+            let new_room = Rect::new(x, y, w, h);
+            let mut ok = true;
+            for other_room in map.rooms.iter() {
+                if new_room.intersect(other_room) { ok = false }
+            }
+            if ok {
+                map.apply_room_to_map(&new_room);
+
+                if !map.rooms.is_empty() {
+                    let (new_x, new_y) = new_room.center();
+                    let (prev_x, prev_y) = map.rooms[map.rooms.len()-1].center();
+                    if rng.range(0,2) == 1 {
+                        map.apply_horizontal_tunnel(prev_x, new_x, prev_y);
+                        map.apply_vertical_tunnel(prev_y, new_y, new_x);
+                    } else {
+                        map.apply_vertical_tunnel(prev_y, new_y, prev_x);
+                        map.apply_horizontal_tunnel(prev_x, new_x, new_y);
+                    }
+                }
+
+                map.rooms.push(new_room);
+            }
+        }
+
+        let stairs_position = map.rooms[map.rooms.len() - 1].center();
+        let stairs_idx = map.xy_idx(stairs_position.0, stairs_position.1);
+        map.tiles[stairs_idx] = TileType::DownStairs;
+
+        map
+    }
+
     pub fn xy_idx(&self, x: i32, y: i32) -> usize {
         (y as usize * self.width as usize) + x as usize
     }
@@ -77,57 +137,11 @@ impl Map {
             content.clear();
         }
     }
+}
 
-    /// Makes a new map using the algorithm from http://rogueliketutorials.com/tutorials/tcod/part-3/
-    /// This gives a handful of random rooms and corridors joining them together.
-    pub fn new_map_rooms_and_corridors() -> Map {
-        let mut map = Map{
-            tiles : vec![TileType::Wall; MAPCOUNT],
-            rooms : Vec::new(),
-            width : MAPWIDTH as i32,
-            height: MAPHEIGHT as i32,
-            revealed_tiles : vec![false; MAPCOUNT],
-            visible_tiles : vec![false; MAPCOUNT],
-            blocked : vec![false; MAPCOUNT],
-            tile_content : vec![Vec::new(); MAPCOUNT]
-        };
-
-        const MAX_ROOMS : i32 = 30;
-        const MIN_SIZE : i32 = 6;
-        const MAX_SIZE : i32 = 10;
-
-        let mut rng = RandomNumberGenerator::new();
-
-        for _i in 0..MAX_ROOMS {
-            let w = rng.range(MIN_SIZE, MAX_SIZE);
-            let h = rng.range(MIN_SIZE, MAX_SIZE);
-            let x = rng.roll_dice(1, map.width - w - 1) - 1;
-            let y = rng.roll_dice(1, map.height - h - 1) - 1;
-            let new_room = Rect::new(x, y, w, h);
-            let mut ok = true;
-            for other_room in map.rooms.iter() {
-                if new_room.intersect(other_room) { ok = false }
-            }
-            if ok {
-                map.apply_room_to_map(&new_room);
-
-                if !map.rooms.is_empty() {
-                    let (new_x, new_y) = new_room.center();
-                    let (prev_x, prev_y) = map.rooms[map.rooms.len()-1].center();
-                    if rng.range(0,2) == 1 {
-                        map.apply_horizontal_tunnel(prev_x, new_x, prev_y);
-                        map.apply_vertical_tunnel(prev_y, new_y, new_x);
-                    } else {
-                        map.apply_vertical_tunnel(prev_y, new_y, prev_x);
-                        map.apply_horizontal_tunnel(prev_x, new_x, new_y);
-                    }
-                }
-
-                map.rooms.push(new_room);
-            }
-        }
-
-        map
+impl Algorithm2D for Map {
+    fn dimensions(&self) -> Point {
+        Point::new(self.width, self.height)
     }
 }
 
@@ -166,12 +180,6 @@ impl BaseMap for Map {
     }
 }
 
-impl Algorithm2D for Map {
-    fn dimensions(&self) -> Point {
-        Point::new(self.width, self.height)
-    }
-}
-
 pub fn draw_map(ecs: &World, ctx : &mut Rltk) {
     let map = ecs.fetch::<Map>();
 
@@ -184,6 +192,10 @@ pub fn draw_map(ecs: &World, ctx : &mut Rltk) {
             let glyph;
             let mut fg;
             match tile {
+                TileType::DownStairs => {
+                    glyph = rltk::to_cp437('>');
+                    fg = RGB::from_f32(0., 1.0, 1.0);
+                }
                 TileType::Floor => {
                     glyph = rltk::to_cp437('.');
                     fg = RGB::from_f32(0.0, 0.5, 0.5);
