@@ -15,7 +15,7 @@ pub fn confusion_scroll(ecs: &mut World, x: i32, y: i32) {
             bg: RGB::named(rltk::BLACK),
             render_order: 2
         })
-        .with(Name{ name : "Confusion Scroll".to_string() })
+        .with(Name{ name: "Confusion Scroll".to_string() })
         .with(Item{})
         .with(Consumable{})
         .with(Ranged{ range: 6 })
@@ -34,7 +34,7 @@ pub fn fireball_scroll(ecs: &mut World, x: i32, y: i32) {
             bg: RGB::named(rltk::BLACK),
             render_order: 2
         })
-        .with(Name{ name : "Fireball Scroll".to_string() })
+        .with(Name{ name: "Fireball Scroll".to_string() })
         .with(Item{})
         .with(Consumable{})
         .with(Ranged{ range: 6 })
@@ -54,7 +54,7 @@ pub fn health_potion(ecs: &mut World, x: i32, y: i32) {
             bg: RGB::named(rltk::BLACK),
             render_order: 2
         })
-        .with(Name{ name : "Health Potion".to_string() })
+        .with(Name{ name: "Health Potion".to_string() })
         .with(Item{})
         .with(Consumable{})
         .with(ProvidesHealing{ heal_amount: 8 })
@@ -72,7 +72,7 @@ pub fn magic_missile_scroll(ecs: &mut World, x: i32, y: i32) {
             bg: RGB::named(rltk::BLACK),
             render_order: 2
         })
-        .with(Name{ name : "Magic Missile Scroll".to_string() })
+        .with(Name{ name: "Magic Missile Scroll".to_string() })
         .with(Item{})
         .with(Consumable{})
         .with(Ranged{ range: 6 })

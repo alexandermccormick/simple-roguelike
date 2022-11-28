@@ -7,7 +7,7 @@ impl<'a> System<'a> for DamageSystem {
     type SystemData = ( WriteStorage<'a, CombatStats>,
                         WriteStorage<'a, SufferDamage> );
 
-    fn run(&mut self, data : Self::SystemData) {
+    fn run(&mut self, data: Self::SystemData) {
         let (mut stats, mut damage) = data;
 
         for (mut stats, damage) in (&mut stats, &damage).join() {
@@ -18,8 +18,8 @@ impl<'a> System<'a> for DamageSystem {
     }
 }
 
-pub fn delete_the_dead(ecs : &mut World) {
-    let mut dead : Vec<Entity> = Vec::new();
+pub fn delete_the_dead(ecs: &mut World) {
+    let mut dead: Vec<Entity> = Vec::new();
     // Using a scope to make the borrow checker happy
     {
         let combat_stats = ecs.read_storage::<CombatStats>();

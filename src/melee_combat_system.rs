@@ -13,7 +13,7 @@ impl<'a> System<'a> for MeleeCombatSystem {
                         WriteStorage<'a, SufferDamage>
                       );
 
-    fn run(&mut self, data : Self::SystemData) {
+    fn run(&mut self, data: Self::SystemData) {
         let (entities, mut log, mut wants_melee, names, combat_stats, mut inflict_damage) = data;
 
         for (_entity, wants_melee, name, stats) in (&entities, &wants_melee, &names, &combat_stats).join() {

@@ -6,7 +6,7 @@ use specs::{
 use crate::{CombatStats, Name, Position, Player, Renderable, SerializeMe, Viewshed};
 
 /// Spawns the player and returns his/her entity object.
-pub fn player(ecs : &mut World, player_x : i32, player_y : i32) -> Entity {
+pub fn player(ecs: &mut World, player_x: i32, player_y: i32) -> Entity {
     ecs
         .create_entity()
         .with(Position { x: player_x, y: player_y })
@@ -17,7 +17,7 @@ pub fn player(ecs : &mut World, player_x : i32, player_y : i32) -> Entity {
             render_order: 0
         })
         .with(Player{})
-        .with(Viewshed{ visible_tiles : Vec::new(), range: 8, dirty: true })
+        .with(Viewshed{ visible_tiles: Vec::new(), range: 8, dirty: true })
         .with(Name{name: "Player".to_string() })
         .with(CombatStats{ max_hp: 30, hp: 30, defense: 2, power: 5 })
         .marked::<SimpleMarker<SerializeMe>>()

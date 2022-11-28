@@ -21,16 +21,16 @@ macro_rules! serialize_individually {
 }
 
 #[cfg(target_arch = "wasm32")]
-pub fn save_game(_ecs : &mut World) {
+pub fn save_game(_ecs: &mut World) {
 }
 
 #[cfg(not(target_arch = "wasm32"))]
-pub fn save_game(ecs : &mut World) {
+pub fn save_game(ecs: &mut World) {
     // Create helper
     let mapcopy = ecs.get_mut::<super::map::Map>().unwrap().clone();
     let savehelper = ecs
         .create_entity()
-        .with(SerializationHelper{ map : mapcopy })
+        .with(SerializationHelper{ map: mapcopy })
         .marked::<SimpleMarker<SerializeMe>>()
         .build();
 
@@ -95,7 +95,7 @@ pub fn load_game(ecs: &mut World) {
         );
     }
 
-    let mut deleteme : Option<Entity> = None;
+    let mut deleteme: Option<Entity> = None;
     {
         let entities = ecs.entities();
         let helper = ecs.read_storage::<SerializationHelper>();
