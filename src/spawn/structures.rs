@@ -1,11 +1,11 @@
-use std::collections::HashMap;
 use rltk::RandomNumberGenerator;
 use specs::prelude::*;
+use std::collections::HashMap;
 
 use crate::random_table::RandomTable;
-use crate::{MAPWIDTH, Rect};
+use crate::{Rect, MAPWIDTH};
 
-use super::items::{health_potion, fireball_scroll, confusion_scroll, magic_missile_scroll};
+use super::items::{confusion_scroll, fireball_scroll, health_potion, magic_missile_scroll};
 use super::monsters::{goblin, orc};
 
 const MAX_MONSTERS: i32 = 4;
@@ -21,7 +21,7 @@ pub fn spawn_room(ecs: &mut World, room: &Rect, map_depth: i32) {
         let mut rng = ecs.write_resource::<RandomNumberGenerator>();
         let num_spawns = rng.roll_dice(1, MAX_MONSTERS + 3) + (map_depth - 1) - 3;
 
-        for _i in 0 .. num_spawns {
+        for _i in 0..num_spawns {
             let mut added = false;
             let mut tries = 0;
             while !added && tries < 20 {

@@ -1,11 +1,13 @@
+use super::{gamelog::GameLog, CombatStats, Name, Player, SufferDamage};
 use specs::prelude::*;
-use super::{CombatStats, SufferDamage, Player, Name, gamelog::GameLog};
 
 pub struct DamageSystem {}
 
 impl<'a> System<'a> for DamageSystem {
-    type SystemData = ( WriteStorage<'a, CombatStats>,
-                        WriteStorage<'a, SufferDamage> );
+    type SystemData = (
+        WriteStorage<'a, CombatStats>,
+        WriteStorage<'a, SufferDamage>,
+    );
 
     fn run(&mut self, data: Self::SystemData) {
         let (mut stats, mut damage) = data;
@@ -38,7 +40,7 @@ pub fn delete_the_dead(ecs: &mut World) {
                         }
                         dead.push(entity)
                     }
-                    Some(_) => rltk::console::log("You are dead")
+                    Some(_) => rltk::console::log("You are dead"),
                 }
             }
         }

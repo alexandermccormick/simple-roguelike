@@ -1,5 +1,5 @@
 extern crate serde;
-use rltk::{GameState, Rltk, Point};
+use rltk::{GameState, Point, Rltk};
 use specs::prelude::*;
 use specs::saveload::{SimpleMarker, SimpleMarkerAllocator};
 
@@ -21,7 +21,7 @@ mod visibility_system;
 
 pub use components::*;
 use damage_system::DamageSystem;
-use inventory_system::{ ItemCollectionSystem, ItemUseSystem, ItemDropSystem };
+use inventory_system::{ItemCollectionSystem, ItemDropSystem, ItemUseSystem};
 pub use map::*;
 use map_indexing_system::MapIndexingSystem;
 use melee_combat_system::MeleeCombatSystem;
@@ -32,46 +32,52 @@ use spawn::charaters;
 use visibility_system::VisibilitySystem;
 
 #[derive(PartialEq, Copy, Clone)]
-pub enum RunState { AwaitingInput,
+pub enum RunState {
+    AwaitingInput,
     PreRun,
     PlayerTurn,
     MonsterTurn,
     ShowInventory,
     ShowDropItem,
-    ShowTargeting { range: i32, item: Entity},
-    MainMenu { menu_selection: gui::MainMenuSelection },
+    ShowTargeting {
+        range: i32,
+        item: Entity,
+    },
+    MainMenu {
+        menu_selection: gui::MainMenuSelection,
+    },
     SaveGame,
-    NextLevel
+    NextLevel,
 }
 
 pub struct State {
-    pub ecs: World
+    pub ecs: World,
 }
 
 impl State {
     fn run_systems(&mut self) {
-        let mut vis = VisibilitySystem{};
+        let mut vis = VisibilitySystem {};
         vis.run_now(&self.ecs);
 
-        let mut mob = MonsterAI{};
+        let mut mob = MonsterAI {};
         mob.run_now(&self.ecs);
 
-        let mut mapindex = MapIndexingSystem{};
+        let mut mapindex = MapIndexingSystem {};
         mapindex.run_now(&self.ecs);
 
-        let mut melee = MeleeCombatSystem{};
+        let mut melee = MeleeCombatSystem {};
         melee.run_now(&self.ecs);
 
-        let mut damage = DamageSystem{};
+        let mut damage = DamageSystem {};
         damage.run_now(&self.ecs);
 
-        let mut pickup = ItemCollectionSystem{};
+        let mut pickup = ItemCollectionSystem {};
         pickup.run_now(&self.ecs);
 
-        let mut itemuse = ItemUseSystem{};
+        let mut itemuse = ItemUseSystem {};
         itemuse.run_now(&self.ecs);
 
-        let mut drop_items = ItemDropSystem{};
+        let mut drop_items = ItemDropSystem {};
         drop_items.run_now(&self.ecs);
 
         self.ecs.maintain();
@@ -101,7 +107,7 @@ impl State {
                 }
             }
 
-            if should_delete { 
+            if should_delete {
                 to_delete.push(entity);
             }
         }
@@ -110,10 +116,12 @@ impl State {
     }
 
     fn goto_next_level(&mut self) {
-        // Delete entities that aren't the player or his/her equipment
+        // Delete entities that aren't the player or their equipment
         let to_delete = self.entities_to_remove_on_level_change();
         for target in to_delete {
-            self.ecs.delete_entity(target).expect("Unable to delete entity");
+            self.ecs
+                .delete_entity(target)
+                .expect("Unable to delete entity");
         }
 
         // Build a new map and place the player
@@ -146,11 +154,13 @@ impl State {
         let vs = viewshed_components.get_mut(*player_entity);
         if let Some(vs) = vs {
             vs.dirty = true;
-        }        
+        }
 
         // Notify the player and give them some health
         let mut gamelog = self.ecs.fetch_mut::<gamelog::GameLog>();
-        gamelog.entries.push("You descend to the next level, and take a moment to heal.".to_string());
+        gamelog
+            .entries
+            .push("You descend to the next level, and take a moment to heal.".to_string());
         let mut player_health_store = self.ecs.write_storage::<CombatStats>();
         let player_health = player_health_store.get_mut(*player_entity);
         if let Some(player_health) = player_health {
@@ -169,7 +179,7 @@ impl GameState for State {
         ctx.cls();
 
         match newrunstate {
-            RunState::MainMenu{..} => {}
+            RunState::MainMenu { .. } => {}
             _ => {
                 draw_map(&self.ecs, ctx);
 
@@ -179,10 +189,12 @@ impl GameState for State {
                     let map = self.ecs.fetch::<Map>();
 
                     let mut data = (&positions, &renderables).join().collect::<Vec<_>>();
-                    data.sort_by(|&a, &b| b.1.render_order.cmp(&a.1.render_order) );
+                    data.sort_by(|&a, &b| b.1.render_order.cmp(&a.1.render_order));
                     for (pos, render) in data.iter() {
                         let idx = map.xy_idx(pos.x, pos.y);
-                        if map.visible_tiles[idx] { ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph) }
+                        if map.visible_tiles[idx] {
+                            ctx.set(pos.x, pos.y, render.fg, render.bg, render.glyph)
+                        }
                     }
 
                     gui::draw_ui(&self.ecs, ctx);
@@ -219,10 +231,20 @@ impl GameState for State {
                         let is_ranged = self.ecs.read_storage::<Ranged>();
                         let is_item_ranged = is_ranged.get(item_entity);
                         if let Some(is_item_ranged) = is_item_ranged {
-                            newrunstate = RunState::ShowTargeting{ range: is_item_ranged.range, item: item_entity };
+                            newrunstate = RunState::ShowTargeting {
+                                range: is_item_ranged.range,
+                                item: item_entity,
+                            };
                         } else {
                             let mut intent = self.ecs.write_storage::<WantsToUseItem>();
-                            intent.insert(*self.ecs.fetch::<Entity>(), WantsToUseItem{ item: item_entity, target: None })
+                            intent
+                                .insert(
+                                    *self.ecs.fetch::<Entity>(),
+                                    WantsToUseItem {
+                                        item: item_entity,
+                                        target: None,
+                                    },
+                                )
                                 .expect("Unable to insert intent");
                             newrunstate = RunState::PlayerTurn;
                         }
@@ -237,45 +259,62 @@ impl GameState for State {
                     gui::ItemMenuResult::Selected => {
                         let item_entity = result.1.unwrap();
                         let mut intent = self.ecs.write_storage::<WantsToDropItem>();
-                        intent.insert(*self.ecs.fetch::<Entity>(), WantsToDropItem{ item: item_entity })
+                        intent
+                            .insert(
+                                *self.ecs.fetch::<Entity>(),
+                                WantsToDropItem { item: item_entity },
+                            )
                             .expect("Unable to insert intent");
                         newrunstate = RunState::PlayerTurn;
                     }
                 }
             }
-            RunState::ShowTargeting{range, item} => {
+            RunState::ShowTargeting { range, item } => {
                 let result = gui::ranged_target(self, ctx, range);
                 match result.0 {
                     gui::ItemMenuResult::Cancel => newrunstate = RunState::AwaitingInput,
                     gui::ItemMenuResult::NoResponse => {}
                     gui::ItemMenuResult::Selected => {
                         let mut intent = self.ecs.write_storage::<WantsToUseItem>();
-                        intent.insert(*self.ecs.fetch::<Entity>(), WantsToUseItem{ item, target: result.1 })
+                        intent
+                            .insert(
+                                *self.ecs.fetch::<Entity>(),
+                                WantsToUseItem {
+                                    item,
+                                    target: result.1,
+                                },
+                            )
                             .expect("Unable to insert intent");
                         newrunstate = RunState::PlayerTurn;
                     }
                 }
             }
-            RunState::MainMenu{ .. } => {
+            RunState::MainMenu { .. } => {
                 let result = gui::main_menu(self, ctx);
                 match result {
-                    gui::MainMenuResult::NoSelection{ selected } => newrunstate = RunState::MainMenu{ menu_selection: selected },
-                    gui::MainMenuResult::Selected{ selected } => {
-                        match selected {
-                            gui::MainMenuSelection::NewGame => newrunstate = RunState::PreRun,
-                            gui::MainMenuSelection::LoadGame => {
-                                saveload_system::load_game(&mut self.ecs);
-                                newrunstate = RunState::AwaitingInput;
-                                saveload_system::delete_save();
-                            }
-                            gui::MainMenuSelection::Quit => { ::std::process::exit(0); }
+                    gui::MainMenuResult::NoSelection { selected } => {
+                        newrunstate = RunState::MainMenu {
+                            menu_selection: selected,
                         }
                     }
+                    gui::MainMenuResult::Selected { selected } => match selected {
+                        gui::MainMenuSelection::NewGame => newrunstate = RunState::PreRun,
+                        gui::MainMenuSelection::LoadGame => {
+                            saveload_system::load_game(&mut self.ecs);
+                            newrunstate = RunState::AwaitingInput;
+                            saveload_system::delete_save();
+                        }
+                        gui::MainMenuSelection::Quit => {
+                            ::std::process::exit(0);
+                        }
+                    },
                 }
             }
             RunState::SaveGame => {
                 saveload_system::save_game(&mut self.ecs);
-                newrunstate = RunState::MainMenu{ menu_selection: gui::MainMenuSelection::Quit };
+                newrunstate = RunState::MainMenu {
+                    menu_selection: gui::MainMenuSelection::Quit,
+                };
             }
             RunState::NextLevel => {
                 self.goto_next_level();
@@ -298,9 +337,7 @@ fn main() -> rltk::BError {
         .build()?;
     context.with_post_scanlines(true);
 
-    let mut gs = State {
-        ecs: World::new()
-    };
+    let mut gs = State { ecs: World::new() };
 
     gs.ecs.register::<Position>();
     gs.ecs.register::<Renderable>();
@@ -341,8 +378,12 @@ fn main() -> rltk::BError {
     gs.ecs.insert(map);
     gs.ecs.insert(Point::new(player_x, player_y));
     gs.ecs.insert(player_entity);
-    gs.ecs.insert(RunState::MainMenu{ menu_selection: gui::MainMenuSelection::NewGame });
-    gs.ecs.insert(gamelog::GameLog{ entries: vec!["Welcome to Rusty Roguelike".to_string()] });
+    gs.ecs.insert(RunState::MainMenu {
+        menu_selection: gui::MainMenuSelection::NewGame,
+    });
+    gs.ecs.insert(gamelog::GameLog {
+        entries: vec!["Welcome to Rusty Roguelike".to_string()],
+    });
 
     rltk::main_loop(context, gs)
 }
