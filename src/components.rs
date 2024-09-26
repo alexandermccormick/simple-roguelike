@@ -29,6 +29,28 @@ pub struct Confusion {
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
 pub struct Consumable {}
 
+#[derive(Clone, Component, ConvertSaveload)]
+pub struct DefenseBonus {
+    pub defense: i32,
+}
+
+#[derive(Clone, Copy, Deserialize, PartialEq, Serialize)]
+pub enum EquipmentSlot {
+    Melee,
+    Shield,
+}
+
+#[derive(Clone, Component, Deserialize, Serialize)]
+pub struct Equippable {
+    pub slot: EquipmentSlot,
+}
+
+#[derive(Clone, Component, ConvertSaveload)]
+pub struct Equipped {
+    pub owner: Entity,
+    pub slot: EquipmentSlot,
+}
+
 #[derive(Component, Debug, ConvertSaveload)]
 pub struct InBackpack {
     pub owner: Entity,
@@ -41,6 +63,11 @@ pub struct InflictsDamage {
 
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
 pub struct Item {}
+
+#[derive(Clone, Component, ConvertSaveload)]
+pub struct MeleePowerBonus {
+    pub power: i32,
+}
 
 #[derive(Component, Debug, Serialize, Deserialize, Clone)]
 pub struct Monster {}
@@ -124,6 +151,11 @@ pub struct WantsToMelee {
 #[derive(Component, Debug, ConvertSaveload)]
 pub struct WantsToPickupItem {
     pub collected_by: Entity,
+    pub item: Entity,
+}
+
+#[derive(Clone, Component, ConvertSaveload, Debug)]
+pub struct WantsToRemoveItem {
     pub item: Entity,
 }
 

@@ -177,6 +177,9 @@ pub fn player_input(gs: &mut State, ctx: &mut Rltk) -> RunState {
             // Show Inventory
             VirtualKeyCode::I => return RunState::ShowInventory,
 
+            // Unequip item
+            VirtualKeyCode::R => return RunState::ShowRemoveItem,
+
             // Save and Quit
             VirtualKeyCode::Escape => return RunState::SaveGame,
 
