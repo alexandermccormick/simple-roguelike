@@ -5,7 +5,10 @@ use std::collections::HashMap;
 use crate::random_table::RandomTable;
 use crate::{Rect, MAPWIDTH};
 
-use super::items::{confusion_scroll, fireball_scroll, health_potion, magic_missile_scroll};
+use super::items::{
+    confusion_scroll, dagger, fireball_scroll, health_potion, longsword, magic_missile_scroll,
+    shield, tower_shield,
+};
 use super::monsters::{goblin, orc};
 
 const MAX_MONSTERS: i32 = 4;
@@ -44,11 +47,15 @@ pub fn spawn_room(ecs: &mut World, room: &Rect, map_depth: i32) {
 
         match spawn.1.as_ref() {
             "Confusion Scroll" => confusion_scroll(ecs, x, y),
+            "Dagger" => dagger(ecs, x, y),
             "Fireball Scroll" => fireball_scroll(ecs, x, y),
             "Goblin" => goblin(ecs, x, y),
             "Health Potion" => health_potion(ecs, x, y),
+            "Longsword" => longsword(ecs, x, y),
             "Magic Missile Scroll" => magic_missile_scroll(ecs, x, y),
             "Orc" => orc(ecs, x, y),
+            "Shield" => shield(ecs, x, y),
+            "Tower Shield" => tower_shield(ecs, x, y),
             _ => {}
         }
     }
@@ -57,9 +64,13 @@ pub fn spawn_room(ecs: &mut World, room: &Rect, map_depth: i32) {
 fn room_table(map_depth: i32) -> RandomTable {
     RandomTable::new()
         .add("Confusion Scroll", 2 + map_depth)
+        .add("Dagger", 3)
         .add("Fireball Scroll", 2 + map_depth)
         .add("Goblin", 10)
         .add("Health Potion", 7)
+        .add("Longsword", map_depth - 1)
         .add("Magic Missile Scroll", 4)
-        .add("orc", 1 + map_depth)
+        .add("Orc", 1 + map_depth)
+        .add("Shield", 3)
+        .add("Tower Shield", map_depth - 1)
 }
